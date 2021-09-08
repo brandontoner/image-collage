@@ -1,5 +1,7 @@
 package com.brandontoner.jimagecollage;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -15,9 +17,10 @@ final class ImageCollageImpl implements ImageCollage {
     private final Set<Path> subImages;
     private final int subSectionsX;
     private final int subSectionsY;
+    @CheckForNull
     private final Path outputDirectory;
 
-    ImageCollageImpl(final ImageCollageBuilder builder) {
+    ImageCollageImpl(@Nonnull final ImageCollageBuilder builder) {
         target = Objects.requireNonNull(builder.getTargetImage());
         outputDirectory = builder.getOutputDirectory();
         subImages = Set.copyOf(builder.getSubImages());
@@ -25,6 +28,7 @@ final class ImageCollageImpl implements ImageCollage {
         subSectionsY = builder.getVerticalSubSections();
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Path> start() {
         CompletableFuture<Path> output = new CompletableFuture<>();
@@ -32,7 +36,7 @@ final class ImageCollageImpl implements ImageCollage {
         return output;
     }
 
-    private void compute(CompletableFuture<Path> completableFuture) {
+    private void compute(@Nonnull CompletableFuture<Path> completableFuture) {
         try {
             final MasterImage masterImage = new MasterImage(target, subSectionsX, subSectionsY);
             subImages.parallelStream().map(masterImage::diff).filter(Objects::nonNull).forEachOrdered(masterImage::add);

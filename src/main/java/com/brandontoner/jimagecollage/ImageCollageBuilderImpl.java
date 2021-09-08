@@ -3,7 +3,6 @@ package com.brandontoner.jimagecollage;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,7 +55,7 @@ final class ImageCollageBuilderImpl implements ImageCollageBuilder {
         return Set.copyOf(this.subImages);
     }
 
-
+    @Nonnull
     @Override
     public ImageCollageBuilder withOutputDirectory(Path path) {
         this.outputDirectory = Objects.requireNonNull(path);
@@ -67,14 +66,6 @@ final class ImageCollageBuilderImpl implements ImageCollageBuilder {
     @Override
     public Path getOutputDirectory() {
         return outputDirectory;
-    }
-
-    @Nonnull
-    @Override
-    public ImageCollageBuilder withSubSections(final int num) {
-        this.withHorizontalSubSections(num);
-        this.withVerticalSubSections(num);
-        return this;
     }
 
     @Nonnull

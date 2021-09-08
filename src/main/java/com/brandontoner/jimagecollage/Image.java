@@ -1,11 +1,8 @@
 package com.brandontoner.jimagecollage;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Optional;
 
 @Immutable
 final class Image {
@@ -13,7 +10,7 @@ final class Image {
     private final int width;
     private final int height;
 
-    Image(final BufferedImage read) {
+    Image(@Nonnull final BufferedImage read) {
         this.width = read.getWidth();
         this.height = read.getHeight();
 
@@ -43,6 +40,7 @@ final class Image {
         return this.rgbArray[y * this.width + x];
     }
 
+    @Nonnull
     Image subImage(final int xOffset, final int yOffset, final int width, final int height) {
         int[] array = new int[width * height];
 
@@ -63,7 +61,7 @@ final class Image {
         return this.height;
     }
 
-    long diff(final Image scaledImage) {
+    long diff(@Nonnull final Image scaledImage) {
         if (scaledImage.getHeight() != this.getHeight() || scaledImage.getWidth() != this.getWidth()) {
             throw new IllegalArgumentException();
         }
@@ -74,9 +72,5 @@ final class Image {
             sum += diff(thisRGB, otherRGB);
         }
         return sum;
-    }
-
-    static Optional<BufferedImage> load(Path path) throws IOException {
-        return Optional.ofNullable(ImageIO.read(path.toFile()));
     }
 }

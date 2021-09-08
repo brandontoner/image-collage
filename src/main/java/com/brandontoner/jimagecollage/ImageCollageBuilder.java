@@ -3,7 +3,6 @@ package com.brandontoner.jimagecollage;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -106,7 +105,7 @@ public interface ImageCollageBuilder {
      * @param path output directory
      * @return builder with output path set
      */
-    default ImageCollageBuilder withOutputDirectory(String path) {
+    default ImageCollageBuilder withOutputDirectory(@Nonnull String path) {
         return withOutputDirectory(Path.of(path));
     }
 
@@ -137,7 +136,9 @@ public interface ImageCollageBuilder {
      * @see ImageCollageBuilder#getVerticalSubSections()
      */
     @Nonnull
-    ImageCollageBuilder withSubSections(int num);
+    default ImageCollageBuilder withSubSections(int num) {
+        return withHorizontalSubSections(num).withVerticalSubSections(num);
+    }
 
     /**
      * Sets the number of horizontal subsections to be used to comprise the target image.

@@ -11,9 +11,10 @@ public final class Main {
     public static void main(final String[] args) throws IOException {
         final ImageCollage collage = ImageCollage.builder()
                                                  .withTargetImage("D:\\target.jpg")
-                                                 .withSubImageDirectory("D:\\New folder")
+                                                 .withSubImageDirectory(
+                                                         "D:\\Users\\brand\\Pictures\\iCloud Photos\\Photos")
                                                  .withOutputDirectory("D:\\output")
-                                                 .withSubSections(16)
+                                                 .withSubSections(32)
                                                  .build();
 
         final CompletableFuture<Path> future = collage.start();
