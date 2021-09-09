@@ -1,6 +1,9 @@
 package com.brandontoner.jimagecollage;
 
 import javax.annotation.CheckForNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -10,6 +13,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 final class MasterImage {
+    private static final Logger LOGGER = LogManager.getLogger(MasterImage.class);
     @Nonnull
     private final Image[][] subSections;
     @Nonnull
@@ -98,6 +102,7 @@ final class MasterImage {
 
     @Nonnull
     BufferedImage compile() throws IOException {
+        LOGGER.info("Compiling images into collage");
         BufferedImage bi = ImageIO.read(bestImages[0][0].path().toFile());
         int scale = getScale(bi.getWidth(), bi.getHeight());
         int width = bi.getWidth() / scale;
@@ -136,14 +141,14 @@ final class MasterImage {
         try {
             final BufferedImage bi = ImageIO.read(path.toFile());
             if (bi == null) {
-                System.err.println(path + " - cannot load");
+                LOGGER.error("Cannot load {}", path);
                 return null;
             }
             if (!checkAspectRatio(bi)) {
-                System.err.println(path + " - bad aspect ratio");
+                LOGGER.warn("File {} has bad aspect ratio", path);
                 return null;
             }
-            System.err.println(path);
+            LOGGER.info("Loading file {}", path);
 
             final BufferedImage scaled = scale(bi, this.subSectionWidth, this.subSectionHeight);
             final Image scaledImage = new Image(scaled);
