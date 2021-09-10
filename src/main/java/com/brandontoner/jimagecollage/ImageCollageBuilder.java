@@ -115,7 +115,7 @@ public interface ImageCollageBuilder {
      * @param path output directory
      * @return builder with output path set
      */
-    ImageCollageBuilder withOutputDirectory(Path path);
+    ImageCollageBuilder withOutputDirectory(@Nonnull Path path);
 
     /**
      * Gets the directory in which to place the output file. If null, it will be placed in a random temp folder.
@@ -179,6 +179,23 @@ public interface ImageCollageBuilder {
      * @return number of vertical sub images
      */
     int getVerticalSubSections();
+
+    /**
+     * Sets the diff function to use to compare images with subsections of the master image.
+     *
+     * @param diffFunction new diff function
+     * @param <U>          new diff type
+     * @return a builder <b>COULD BE A NEW INSTANCE</b> with the diff function set.
+     */
+    <U extends SubImagesDiff<U>> ImageCollageBuilder withDiffFunction(@Nonnull DiffFunction<U> diffFunction);
+
+    /**
+     * Gets the diff function to use to compare images with subsections of the master image.
+     *
+     * @return diff  function
+     */
+    @Nonnull
+    DiffFunction<?> getDiffFunction();
 
     /**
      * Builds the {@link ImageCollage}.

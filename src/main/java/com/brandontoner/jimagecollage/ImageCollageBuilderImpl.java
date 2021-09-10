@@ -10,55 +10,63 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Implementation of {@link ImageCollageBuilder}.
  */
 @NotThreadSafe
-final class ImageCollageBuilderImpl implements ImageCollageBuilder {
+final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements ImageCollageBuilder {
     /** Collection of sub image files. */
     private final Collection<Path> subImages = new HashSet<>();
     private Path targetImage;
     private int horizontalSubSections;
     private int verticalSubSections;
     private Path outputDirectory;
+    private DiffFunction<T> diffFunction;
+
+    ImageCollageBuilderImpl(@Nonnull DiffFunction<T> diffFunction) {
+        this.diffFunction = Objects.requireNonNull(diffFunction);
+    }
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withTargetImage(@Nonnull final Path path) {
-        this.targetImage = Objects.requireNonNull(path);
+    public ImageCollageBuilder withTargetImage(@Nonnull Path path) {
+        targetImage = Objects.requireNonNull(path);
         return this;
     }
 
     @Override
     public Path getTargetImage() {
-        return this.targetImage;
+        return targetImage;
     }
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withSubImageDirectory(@Nonnull final Path subImages) throws IOException {
-        Files.walk(subImages).filter(Files::isRegularFile).forEach(this::withSubImage);
+    public ImageCollageBuilder withSubImageDirectory(@Nonnull Path subImages) throws IOException {
+        try (Stream<Path> stream = Files.walk(subImages)) {
+            stream.filter(Files::isRegularFile).forEach(this::withSubImage);
+        }
         return this;
     }
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withSubImage(@Nonnull final Path path) {
-        this.subImages.add(path);
+    public ImageCollageBuilder withSubImage(@Nonnull Path path) {
+        subImages.add(path);
         return this;
     }
 
     @Nonnull
     @Override
     public Collection<Path> getSubImages() {
-        return Set.copyOf(this.subImages);
+        return Set.copyOf(subImages);
     }
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withOutputDirectory(Path path) {
-        this.outputDirectory = Objects.requireNonNull(path);
+    public ImageCollageBuilder withOutputDirectory(@Nonnull Path path) {
+        outputDirectory = Objects.requireNonNull(path);
         return this;
     }
 
@@ -70,31 +78,46 @@ final class ImageCollageBuilderImpl implements ImageCollageBuilder {
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withHorizontalSubSections(final int num) {
-        this.horizontalSubSections = num;
+    public ImageCollageBuilder withHorizontalSubSections(int num) {
+        horizontalSubSections = num;
         return this;
     }
 
     @Override
     public int getHorizontalSubSections() {
-        return this.horizontalSubSections;
+        return horizontalSubSections;
     }
 
     @Nonnull
     @Override
-    public ImageCollageBuilder withVerticalSubSections(final int num) {
-        this.verticalSubSections = num;
+    public ImageCollageBuilder withVerticalSubSections(int num) {
+        verticalSubSections = num;
         return this;
     }
 
     @Override
     public int getVerticalSubSections() {
-        return this.verticalSubSections;
+        return verticalSubSections;
+    }
+
+    @Override
+    public <U extends SubImagesDiff<U>> ImageCollageBuilder withDiffFunction(@Nonnull DiffFunction<U> diffFunction) {
+        // TODO this probably works fine, since the type erasure is removed at runtime, but it's kinda bad.
+        // Could be be replaced with creating a new instance of the builder with all of the same values, and the new
+        // diff function
+        this.diffFunction = (DiffFunction<T>) Objects.requireNonNull(diffFunction);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public DiffFunction<T> getDiffFunction() {
+        return diffFunction;
     }
 
     @Nonnull
     @Override
     public ImageCollage build() {
-        return new ImageCollageImpl(this);
+        return new ImageCollageImpl<>(this);
     }
 }

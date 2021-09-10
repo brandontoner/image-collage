@@ -15,19 +15,20 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
-final class ImageCollageImpl implements ImageCollage {
-    private static final Logger LOGGER = LogManager.getLogger(ImageCollageImpl.class);
-    private final Path target;
-    private final Set<Path> subImages;
+final class ImageCollageImpl<T extends SubImagesDiff<T>> implements ImageCollage {
+    @Nonnull private static final Logger LOGGER = LogManager.getLogger(ImageCollageImpl.class);
+    @Nonnull private final Path target;
+    @Nonnull private final Set<Path> subImages;
+    @Nonnull private final DiffFunction<T> diffFunction;
     private final int subSectionsX;
     private final int subSectionsY;
-    @CheckForNull
-    private final Path outputDirectory;
+    @CheckForNull private final Path outputDirectory;
 
-    ImageCollageImpl(@Nonnull final ImageCollageBuilder builder) {
+    ImageCollageImpl(@Nonnull ImageCollageBuilder builder) {
         target = Objects.requireNonNull(builder.getTargetImage());
         outputDirectory = builder.getOutputDirectory();
         subImages = Set.copyOf(builder.getSubImages());
+        diffFunction = (DiffFunction<T>) Objects.requireNonNull(builder.getDiffFunction());
         subSectionsX = builder.getHorizontalSubSections();
         subSectionsY = builder.getVerticalSubSections();
     }
@@ -40,12 +41,15 @@ final class ImageCollageImpl implements ImageCollage {
         return output;
     }
 
-    private void compute(@Nonnull CompletableFuture<Path> completableFuture) {
+    private void compute(@Nonnull CompletableFuture<? super Path> completableFuture) {
         try {
-            final MasterImage masterImage = new MasterImage(target, subSectionsX, subSectionsY);
-            subImages.parallelStream().map(masterImage::diff).filter(Objects::nonNull).forEachOrdered(masterImage::add);
+            MasterImage<T> masterImage = new MasterImage<>(target, subSectionsX, subSectionsY);
+            subImages.parallelStream()
+                     .map(subImage -> diffFunction.diff(masterImage, subImage))
+                     .filter(Objects::nonNull)
+                     .forEachOrdered(masterImage::add);
 
-            final BufferedImage output = masterImage.compile();
+            BufferedImage output = masterImage.compile();
 
             File of;
             if (outputDirectory == null) {

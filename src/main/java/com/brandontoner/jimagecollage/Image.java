@@ -1,60 +1,35 @@
 package com.brandontoner.jimagecollage;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
 
 @Immutable
 final class Image {
-    private static final Logger LOGGER = LogManager.getLogger(Image.class);
-    private final int[] rgbArray;
+    @Nonnull private final int[] rgbArray;
     private final int width;
     private final int height;
 
-    Image(@Nonnull final BufferedImage read) {
-        this.width = read.getWidth();
-        this.height = read.getHeight();
+    Image(@Nonnull BufferedImage read) {
+        width = read.getWidth();
+        height = read.getHeight();
 
-        this.rgbArray = read.getRGB(0, 0, width, height, null, 0, width);
+        rgbArray = read.getRGB(0, 0, width, height, null, 0, width);
     }
 
-    private Image(final int[] rgbArray, final int width, final int height) {
+    private Image(@Nonnull int[] rgbArray, int width, int height) {
         this.rgbArray = rgbArray;
         this.width = width;
         this.height = height;
     }
 
-    private static int diff(final int a, final int b) {
-        final int ar = (a >> 16) & 0xFF;
-        final int br = (b >> 16) & 0xFF;
-
-        final int ag = (a >> 8) & 0xFF;
-        final int bg = (b >> 8) & 0xFF;
-
-        final int ab = (a) & 0xFF;
-        final int bb = (b) & 0xFF;
-
-        return Math.abs(ar - br) + Math.abs(ag - bg) + Math.abs(ab - bb);
-    }
-
-    int getRGB(final int x, final int y) {
-        return this.rgbArray[y * this.width + x];
-    }
-
     @Nonnull
-    Image subImage(final int xOffset, final int yOffset, final int width, final int height) {
+    Image subImage(int xOffset, int yOffset, int width, int height) {
         int[] array = new int[width * height];
 
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                array[y * width + x] = this.getRGB(x + xOffset, y + yOffset);
+                array[y * width + x] = rgbArray[(y + yOffset) * this.width + x + xOffset];
             }
         }
 
@@ -62,32 +37,14 @@ final class Image {
     }
 
     int getWidth() {
-        return this.width;
+        return width;
     }
 
     int getHeight() {
-        return this.height;
+        return height;
     }
 
-    long diff(@Nonnull final Image scaledImage) {
-        if (scaledImage.getHeight() != this.getHeight() || scaledImage.getWidth() != this.getWidth()) {
-            throw new IllegalArgumentException();
-        }
-        long sum = 0;
-        for (int i = 0; i < rgbArray.length; i++) {
-            final int thisRGB = this.rgbArray[i];
-            final int otherRGB = scaledImage.rgbArray[i];
-            sum += diff(thisRGB, otherRGB);
-        }
-        return sum;
-    }
-
-    static BufferedImage read(Path p) {
-        LOGGER.info("Loading file {}", p);
-        try {
-            return ImageIO.read(p.toFile());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    int[] rgbArray() {
+        return rgbArray;
     }
 }

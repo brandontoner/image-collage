@@ -28,5 +28,16 @@
             <artifactId>log4j-core</artifactId>
             <version>2.14.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+            <version>2.15.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.adobe.xmp/xmpcore -->
+        <dependency>
+            <groupId>com.adobe.xmp</groupId>
+            <artifactId>xmpcore</artifactId>
+            <version>6.1.11</version>
+        </dependency>
     </dependencies>
 </project>
