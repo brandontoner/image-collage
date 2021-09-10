@@ -1,11 +1,19 @@
 package com.brandontoner.jimagecollage;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 
 @Immutable
 final class Image {
+    private static final Logger LOGGER = LogManager.getLogger(Image.class);
     private final int[] rgbArray;
     private final int width;
     private final int height;
@@ -72,5 +80,14 @@ final class Image {
             sum += diff(thisRGB, otherRGB);
         }
         return sum;
+    }
+
+    static BufferedImage read(Path p) {
+        LOGGER.info("Loading file {}", p);
+        try {
+            return ImageIO.read(p.toFile());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

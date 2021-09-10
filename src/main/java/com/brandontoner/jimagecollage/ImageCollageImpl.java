@@ -1,5 +1,8 @@
 package com.brandontoner.jimagecollage;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
@@ -13,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
 final class ImageCollageImpl implements ImageCollage {
+    private static final Logger LOGGER = LogManager.getLogger(ImageCollageImpl.class);
     private final Path target;
     private final Set<Path> subImages;
     private final int subSectionsX;
@@ -50,6 +54,7 @@ final class ImageCollageImpl implements ImageCollage {
                 Files.createDirectories(outputDirectory);
                 of = Files.createTempFile(outputDirectory, "ImageCollage", ".jpg").toFile();
             }
+            LOGGER.info("Writing image to {}", of);
             ImageIO.write(output, "JPEG", of);
 
             completableFuture.complete(of.toPath());

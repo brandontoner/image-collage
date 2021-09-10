@@ -1,50 +1,53 @@
 package com.brandontoner.jimagecollage;
 
-import javax.annotation.CheckForNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 final class MasterImage {
     private static final Logger LOGGER = LogManager.getLogger(MasterImage.class);
     @Nonnull
-    private final Image[][] subSections;
+    private final Image[] subSections;
     @Nonnull
-    private final Diff[][] bestImages;
+    private final Diff[] bestImages;
     @Nonnull
-    private final long[][] diffs;
+    private final long[] diffs;
     private final int subSectionsX;
     private final int subSectionsY;
     private final int subSectionWidth;
     private final int subSectionHeight;
 
-    MasterImage(@Nonnull final Path target, final int subSectionsX, final int subSectionsY) throws IOException {
-        Image image = new Image(ImageIO.read(target.toFile()));
+    MasterImage(@Nonnull final Path target, final int subSectionsX, final int subSectionsY) {
+        Image image = new Image(Image.read(target));
         this.subSectionsX = subSectionsX;
         this.subSectionsY = subSectionsY;
 
         this.subSectionWidth = image.getWidth() / subSectionsX;
         this.subSectionHeight = image.getHeight() / subSectionsY;
 
-        this.subSections = new Image[subSectionsY][subSectionsX];
-        this.bestImages = new Diff[subSectionsY][subSectionsX];
-        this.diffs = new long[subSectionsY][subSectionsX];
-
+        int subImagesCount = subSectionsY * subSectionsX;
+        this.subSections = new Image[subImagesCount];
+        this.bestImages = new Diff[subImagesCount];
+        this.diffs = new long[subImagesCount];
 
         for (int y = 0; y < subSectionsY; ++y) {
             for (int x = 0; x < subSectionsX; ++x) {
-                this.diffs[y][x] = Long.MAX_VALUE;
-                this.subSections[y][x] = image.subImage(x * this.subSectionWidth,
-                                                        y * this.subSectionHeight,
-                                                        this.subSectionWidth,
-                                                        this.subSectionHeight);
+                this.diffs[y * subSectionsX + x] = Long.MAX_VALUE;
+                this.subSections[y * subSectionsX + x] = image.subImage(x * this.subSectionWidth,
+                                                                        y * this.subSectionHeight,
+                                                                        this.subSectionWidth,
+                                                                        this.subSectionHeight);
             }
         }
     }
@@ -61,31 +64,23 @@ final class MasterImage {
     }
 
     public void add(@Nonnull Diff entry) {
-        long[][] diffArray = entry.diffs();
-        if (diffArray == null) {
-            return;
-        }
-
-        int bestX = -1;
-        int bestY = -1;
+        long[] diffArray = entry.diffs();
+        int bestIndex = -1;
         long bestDiff = Long.MAX_VALUE;
 
-        for (int y = 0; y < this.subSectionsY; ++y) {
-            for (int x = 0; x < this.subSectionsX; ++x) {
-                final long diff = diffArray[y][x];
-                if (diff < this.diffs[y][x] && diff < bestDiff) {
-                    // better than the diff for this image, and better this best diff
-                    bestX = x;
-                    bestY = y;
-                    bestDiff = diff;
-                }
+        for (int i = 0; i < this.diffs.length; i++) {
+            long diff = diffArray[i];
+            if (diff < this.diffs[i] && diff < bestDiff) {
+                // better than the diff for this image, and better this best diff
+                bestIndex = i;
+                bestDiff = diff;
             }
         }
 
-        if (bestX != -1) {
-            this.diffs[bestY][bestX] = bestDiff;
-            final Diff oldFile = this.bestImages[bestY][bestX];
-            this.bestImages[bestY][bestX] = entry;
+        if (bestIndex != -1) {
+            this.diffs[bestIndex] = bestDiff;
+            final Diff oldFile = this.bestImages[bestIndex];
+            this.bestImages[bestIndex] = entry;
             if (oldFile != null) {
                 // RE-PROCESS OVERWRITTEN FILE
                 this.add(oldFile);
@@ -101,9 +96,9 @@ final class MasterImage {
     }
 
     @Nonnull
-    BufferedImage compile() throws IOException {
+    BufferedImage compile() {
         LOGGER.info("Compiling images into collage");
-        BufferedImage bi = ImageIO.read(bestImages[0][0].path().toFile());
+        BufferedImage bi = Image.read(bestImages[0].path());
         int scale = getScale(bi.getWidth(), bi.getHeight());
         int width = bi.getWidth() / scale;
         int height = bi.getHeight() / scale;
@@ -112,18 +107,26 @@ final class MasterImage {
         final Graphics2D g2 = output.createGraphics();
         g2.setBackground(Color.WHITE);
         g2.clearRect(0, 0, output.getWidth(), output.getHeight());
+
+        List<Map.Entry<Point, Diff>> diffs = new ArrayList<>();
+
         for (int y = 0; y < this.subSectionsY; ++y) {
             for (int x = 0; x < this.subSectionsX; ++x) {
-                if (this.bestImages[y][x] != null) {
-                    g2.drawImage(ImageIO.read(this.bestImages[y][x].path().toFile()),
-                                 x * width,
-                                 y * height,
-                                 width,
-                                 height,
-                                 null);
+                if (this.bestImages[y * subSectionsX + x] != null) {
+                    diffs.add(new AbstractMap.SimpleImmutableEntry<>(new Point(x, y),
+                                                                     bestImages[y * subSectionsX + x]));
                 }
             }
         }
+        diffs.parallelStream()
+             .map(e -> new AbstractMap.SimpleImmutableEntry<>(e.getKey(), Image.read(e.getValue().path())))
+             .forEach(e -> {
+                 int x = e.getKey().x;
+                 int y = e.getKey().y;
+                 synchronized (g2) {
+                     g2.drawImage(e.getValue(), x * width, y * height, width, height, null);
+                 }
+             });
         g2.dispose();
         return output;
     }
@@ -138,33 +141,25 @@ final class MasterImage {
 
     @CheckForNull
     Diff diff(@Nonnull final Path path) {
-        try {
-            final BufferedImage bi = ImageIO.read(path.toFile());
-            if (bi == null) {
-                LOGGER.error("Cannot load {}", path);
-                return null;
-            }
-            if (!checkAspectRatio(bi)) {
-                LOGGER.warn("File {} has bad aspect ratio", path);
-                return null;
-            }
-            LOGGER.info("Loading file {}", path);
-
-            final BufferedImage scaled = scale(bi, this.subSectionWidth, this.subSectionHeight);
-            final Image scaledImage = new Image(scaled);
-            long[][] output = new long[subSectionsY][subSectionsX];
-
-            for (int y = 0; y < this.subSectionsY; ++y) {
-                for (int x = 0; x < this.subSectionsX; ++x) {
-                    output[y][x] = this.subSections[y][x].diff(scaledImage);
-                }
-            }
-            return new Diff(path, output);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        final BufferedImage bi = Image.read(path);
+        if (bi == null) {
+            LOGGER.error("Cannot load {}", path);
+            return null;
         }
+        if (!checkAspectRatio(bi)) {
+            LOGGER.warn("File {} has bad aspect ratio", path);
+            return null;
+        }
+
+        final BufferedImage scaled = scale(bi, this.subSectionWidth, this.subSectionHeight);
+        final Image scaledImage = new Image(scaled);
+        long[] output = new long[subSections.length];
+        for (int i = 0; i < subSections.length; i++) {
+            output[i] = this.subSections[i].diff(scaledImage);
+        }
+        return new Diff(path, output);
     }
 
-    record Diff(Path path, long[][] diffs) {
+    record Diff(Path path, long[] diffs) {
     }
 }
