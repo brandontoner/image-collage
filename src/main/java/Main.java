@@ -18,7 +18,8 @@ public enum Main {
                                            .withTargetImage("D:\\target.jpg")
                                            .withSubImageDirectory("D:\\Users\\brand\\Pictures\\iCloud Photos\\Photos")
                                            .withOutputDirectory("D:\\output")
-                                           .withSubSections(32)
+                                           .withSubSections(64)
+                                           .withUsagePerImage(10)
                                            .build();
 
         CompletableFuture<Path> future = collage.start();

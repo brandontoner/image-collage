@@ -1,5 +1,4 @@
 # image-collage
 
 ## TODO
-* Allow using each sub image more than once
-* Allow different types of diffs (abs of rgb diff, ssim, etc.)
+* Allow cropping images to make them fit the correct aspect ratio

@@ -20,7 +20,7 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
      * @param average average of the array
      * @return variance of the array
      */
-    private static float getVariance(float[] floats, float average) {
+    private static float getVariance(@Nonnull float[] floats, float average) {
         float variance = 0;
         for (float luma : floats) {
             float d1 = luma - average;
@@ -29,7 +29,7 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
         return variance / floats.length;
     }
 
-    private static double ssim(Image img1, float[] lumas2, float average2, float var2) {
+    private static double ssim(@Nonnull Image img1, float[] lumas2, float average2, float var2) {
         float[] lumas1 = getLumas(img1);
         float average1 = getAverage(lumas1);
         float var1 = getVariance(lumas1, average1);
@@ -46,7 +46,8 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
         return (2 * average1 * average2 + c1) * (2 * covariance + c2) / ((average1 * average1 + average2 * average2 + c1) * (var1 + var2 + c2));
     }
 
-    private static float[] getLumas(Image img1) {
+    @Nonnull
+    private static float[] getLumas(@Nonnull Image img1) {
         int[] rgbArray = img1.rgbArray();
         float[] lumas = new float[rgbArray.length];
         for (int i = 0; i < rgbArray.length; i++) {
@@ -59,7 +60,7 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
         return lumas;
     }
 
-    private static float getAverage(float[] lumas) {
+    private static float getAverage(@Nonnull float[] lumas) {
         float v = 0;
         for (float luma : lumas) {
             v += luma;
@@ -69,7 +70,7 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
 
     @Nonnull
     @Override
-    protected SsimDiff diff(@Nonnull Path subImage, Image scaledImage, Image[] subSections) {
+    protected SsimDiff diff(@Nonnull Path subImage, @Nonnull Image scaledImage, @Nonnull Image[] subSections) {
         float[] lumas = getLumas(scaledImage);
         float average = getAverage(lumas);
         float variance = getVariance(lumas, average);
@@ -80,7 +81,14 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
         return new SsimDiff(subImage, output);
     }
 
-    static record SsimDiff(Path path, double[] ssims) implements SubImagesDiff<SsimDiff> {
+    static final class SsimDiff extends SubImagesDiff<SsimDiff> {
+        private final double[] ssims;
+
+        SsimDiff(Path path, double[] ssims) {
+            super(path);
+            this.ssims = ssims;
+        }
+
         @Override
         public boolean isBetter(int i, @Nonnull SsimDiff other) {
             return ssims[i] > other.ssims[i];

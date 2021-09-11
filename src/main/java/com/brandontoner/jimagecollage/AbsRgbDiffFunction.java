@@ -33,7 +33,7 @@ class AbsRgbDiffFunction extends DiffFunction<AbsRgbDiffFunction.LongDiff> {
 
     @Override
     @Nonnull
-    protected LongDiff diff(@Nonnull Path subImage, Image scaledImage, Image[] subSections) {
+    protected LongDiff diff(@Nonnull Path subImage, @Nonnull Image scaledImage, @Nonnull Image[] subSections) {
         long[] output = new long[subSections.length];
         for (int i = 0; i < subSections.length; i++) {
             output[i] = diff(subSections[i], scaledImage);
@@ -41,7 +41,14 @@ class AbsRgbDiffFunction extends DiffFunction<AbsRgbDiffFunction.LongDiff> {
         return new LongDiff(subImage, output);
     }
 
-    static record LongDiff(Path path, long[] diffs) implements SubImagesDiff<LongDiff> {
+    static final class LongDiff extends SubImagesDiff<LongDiff> {
+        private final long[] diffs;
+
+        LongDiff(Path path, long[] diffs) {
+            super(path);
+            this.diffs = diffs;
+        }
+
         @Override
         public boolean isBetter(int i, @Nonnull LongDiff other) {
             return diffs[i] < other.diffs[i];

@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -21,7 +22,7 @@ enum ImageUtils {
     private static final Logger LOGGER = LogManager.getLogger(ImageUtils.class);
 
     @CheckForNull
-    static BufferedImage read(Path p) {
+    static BufferedImage read(@Nonnull Path p) {
         LOGGER.info("Loading file {}", p);
         BufferedImage input;
         try {
@@ -45,7 +46,8 @@ enum ImageUtils {
     }
 
 
-    private static BufferedImage rotate(BufferedImage img, String orientation) {
+    @Nonnull
+    private static BufferedImage rotate(@Nonnull BufferedImage img, String orientation) {
         return switch (orientation) {
             case "Top, left side (Horizontal / normal)", "Unknown (0)" -> img;
             case "Right side, top (Rotate 90 CW)" -> rotate90cw(img);
@@ -55,7 +57,8 @@ enum ImageUtils {
         };
     }
 
-    private static BufferedImage rotate90cw(BufferedImage img) {
+    @Nonnull
+    private static BufferedImage rotate90cw(@Nonnull BufferedImage img) {
         int width = img.getWidth();
         int height = img.getHeight();
         int[] rgbIn = img.getRGB(0, 0, width, height, null, 0, width);
@@ -70,7 +73,8 @@ enum ImageUtils {
         return newImage;
     }
 
-    private static BufferedImage rotate180(BufferedImage img) {
+    @Nonnull
+    private static BufferedImage rotate180(@Nonnull BufferedImage img) {
         int width = img.getWidth();
         int height = img.getHeight();
         int[] rgbIn = img.getRGB(0, 0, width, height, null, 0, width);
@@ -85,7 +89,8 @@ enum ImageUtils {
         return newImage;
     }
 
-    private static BufferedImage rotate270cw(BufferedImage img) {
+    @Nonnull
+    private static BufferedImage rotate270cw(@Nonnull BufferedImage img) {
         int width = img.getWidth();
         int height = img.getHeight();
         int[] rgbIn = img.getRGB(0, 0, width, height, null, 0, width);

@@ -18,12 +18,13 @@ import java.util.stream.Stream;
 @NotThreadSafe
 final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements ImageCollageBuilder {
     /** Collection of sub image files. */
-    private final Collection<Path> subImages = new HashSet<>();
+    @Nonnull private final Collection<Path> subImages = new HashSet<>();
     private Path targetImage;
     private int horizontalSubSections;
     private int verticalSubSections;
     private Path outputDirectory;
     private DiffFunction<T> diffFunction;
+    private int usagesPerImage = 1;
 
     ImageCollageBuilderImpl(@Nonnull DiffFunction<T> diffFunction) {
         this.diffFunction = Objects.requireNonNull(diffFunction);
@@ -100,6 +101,7 @@ final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements Image
         return verticalSubSections;
     }
 
+    @Nonnull
     @Override
     public <U extends SubImagesDiff<U>> ImageCollageBuilder withDiffFunction(@Nonnull DiffFunction<U> diffFunction) {
         // TODO this probably works fine, since the type erasure is removed at runtime, but it's kinda bad.
@@ -107,6 +109,18 @@ final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements Image
         // diff function
         this.diffFunction = (DiffFunction<T>) Objects.requireNonNull(diffFunction);
         return this;
+    }
+
+    @Nonnull
+    @Override
+    public ImageCollageBuilder withUsagePerImage(int n) {
+        usagesPerImage = n;
+        return this;
+    }
+
+    @Override
+    public int getUsagesPerImage() {
+        return usagesPerImage;
     }
 
     @Nonnull

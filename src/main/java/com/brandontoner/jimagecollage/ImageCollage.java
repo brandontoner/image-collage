@@ -10,7 +10,8 @@ public interface ImageCollage {
         return builder(DiffFunction.absRgb());
     }
 
-    static <T extends SubImagesDiff<T>> ImageCollageBuilder builder(DiffFunction<T> diffFunction) {
+    @Nonnull
+    static <T extends SubImagesDiff<T>> ImageCollageBuilder builder(@Nonnull DiffFunction<T> diffFunction) {
         return new ImageCollageBuilderImpl<>(diffFunction);
     }
 

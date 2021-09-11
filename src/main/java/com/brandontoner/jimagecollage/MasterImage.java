@@ -23,8 +23,10 @@ final class MasterImage<T extends SubImagesDiff<T>> {
     private final int subSectionsY;
     private final int subSectionWidth;
     private final int subSectionHeight;
+    private final int usagesPerImage;
 
-    MasterImage(@Nonnull Path target, int subSectionsX, int subSectionsY) {
+    MasterImage(@Nonnull Path target, int subSectionsX, int subSectionsY, int usagesPerImage) {
+        this.usagesPerImage = usagesPerImage;
         Image image = new Image(Objects.requireNonNull(ImageUtils.read(target)));
         this.subSectionsX = subSectionsX;
         this.subSectionsY = subSectionsY;
@@ -38,37 +40,46 @@ final class MasterImage<T extends SubImagesDiff<T>> {
 
         for (int y = 0; y < subSectionsY; ++y) {
             for (int x = 0; x < subSectionsX; ++x) {
-                subSections[y * subSectionsX + x] = image.subImage(x * subSectionWidth,
-                                                                   y * subSectionHeight,
-                                                                   subSectionWidth,
-                                                                   subSectionHeight);
+                subSections[y * subSectionsX + x] =
+                        image.subImage(x * subSectionWidth, y * subSectionHeight, subSectionWidth, subSectionHeight);
             }
         }
     }
 
     boolean add(@Nonnull T entry) {
-        int bestIndex = -1;
+        boolean added = false;
+        int usages;
+        while ((usages = entry.getUsages()) < usagesPerImage) {
+            int bestIndex = -1;
 
-        for (int i = 0; i < bestImages.length; i++) {
-            if (bestImages[i] == null || entry.isBetter(i, bestImages[i])) {
-                // better than the existing best image
-                if (bestIndex == -1 || entry.isBetter(i, bestIndex)) {
-                    // better than the diff for this image
-                    bestIndex = i;
+            for (int i = 0; i < bestImages.length; i++) {
+                T bestImage = bestImages[i];
+                if (bestImage == null || entry.isBetter(i, bestImage)) {
+                    // better than the existing best image
+                    if (bestImage == null || usages <= bestImage.getUsages()) {
+                        // only replace images that have been used the same number of times or more
+                        if (bestIndex == -1 || entry.isBetter(i, bestIndex)) {
+                            // better than the diff for this image
+                            bestIndex = i;
+                        }
+                    }
                 }
             }
-        }
 
-        if (bestIndex != -1) {
+            if (bestIndex == -1) {
+                return added;
+            }
+            entry.incrementUsages();
             T oldFile = bestImages[bestIndex];
             bestImages[bestIndex] = entry;
             if (oldFile != null) {
                 // RE-PROCESS OVERWRITTEN FILE
+                oldFile.decrementUsages();
                 add(oldFile);
             }
-            return true;
+            added = true;
         }
-        return false;
+        return added;
     }
 
     @Nonnull
@@ -123,6 +134,7 @@ final class MasterImage<T extends SubImagesDiff<T>> {
         return subSectionHeight;
     }
 
+    @Nonnull
     Image[] subSections() {
         return subSections;
     }

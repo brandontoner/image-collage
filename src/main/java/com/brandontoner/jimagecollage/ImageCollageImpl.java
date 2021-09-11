@@ -23,6 +23,7 @@ final class ImageCollageImpl<T extends SubImagesDiff<T>> implements ImageCollage
     private final int subSectionsX;
     private final int subSectionsY;
     @CheckForNull private final Path outputDirectory;
+    private final int usagesPerImage;
 
     ImageCollageImpl(@Nonnull ImageCollageBuilder builder) {
         target = Objects.requireNonNull(builder.getTargetImage());
@@ -31,6 +32,7 @@ final class ImageCollageImpl<T extends SubImagesDiff<T>> implements ImageCollage
         diffFunction = (DiffFunction<T>) Objects.requireNonNull(builder.getDiffFunction());
         subSectionsX = builder.getHorizontalSubSections();
         subSectionsY = builder.getVerticalSubSections();
+        usagesPerImage = builder.getUsagesPerImage();
     }
 
     @Nonnull
@@ -43,7 +45,7 @@ final class ImageCollageImpl<T extends SubImagesDiff<T>> implements ImageCollage
 
     private void compute(@Nonnull CompletableFuture<? super Path> completableFuture) {
         try {
-            MasterImage<T> masterImage = new MasterImage<>(target, subSectionsX, subSectionsY);
+            MasterImage<T> masterImage = new MasterImage<>(target, subSectionsX, subSectionsY, usagesPerImage);
             subImages.parallelStream()
                      .map(subImage -> diffFunction.diff(masterImage, subImage))
                      .filter(Objects::nonNull)

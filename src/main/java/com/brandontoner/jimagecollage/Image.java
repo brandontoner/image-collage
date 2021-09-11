@@ -44,6 +44,7 @@ final class Image {
         return height;
     }
 
+    @Nonnull
     int[] rgbArray() {
         return rgbArray;
     }

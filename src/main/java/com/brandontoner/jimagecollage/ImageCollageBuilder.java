@@ -105,6 +105,7 @@ public interface ImageCollageBuilder {
      * @param path output directory
      * @return builder with output path set
      */
+    @Nonnull
     default ImageCollageBuilder withOutputDirectory(@Nonnull String path) {
         return withOutputDirectory(Path.of(path));
     }
@@ -115,6 +116,7 @@ public interface ImageCollageBuilder {
      * @param path output directory
      * @return builder with output path set
      */
+    @Nonnull
     ImageCollageBuilder withOutputDirectory(@Nonnull Path path);
 
     /**
@@ -187,12 +189,25 @@ public interface ImageCollageBuilder {
      * @param <U>          new diff type
      * @return a builder <b>COULD BE A NEW INSTANCE</b> with the diff function set.
      */
+    @Nonnull
     <U extends SubImagesDiff<U>> ImageCollageBuilder withDiffFunction(@Nonnull DiffFunction<U> diffFunction);
+
+    /**
+     * Sets the maximum times each image can be used, defaults to 1.
+     *
+     * @return builder with max usages set.
+     */
+    ImageCollageBuilder withUsagePerImage(int n);
+
+    /**
+     * @return maximum times each image can be used.
+     */
+    int getUsagesPerImage();
 
     /**
      * Gets the diff function to use to compare images with subsections of the master image.
      *
-     * @return diff  function
+     * @return diff function
      */
     @Nonnull
     DiffFunction<?> getDiffFunction();
