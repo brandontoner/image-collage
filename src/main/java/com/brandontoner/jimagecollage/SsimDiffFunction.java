@@ -82,9 +82,9 @@ class SsimDiffFunction extends DiffFunction<SsimDiffFunction.SsimDiff> {
     }
 
     static final class SsimDiff extends SubImagesDiff<SsimDiff> {
-        private final double[] ssims;
+        @Nonnull private final double[] ssims;
 
-        SsimDiff(Path path, double[] ssims) {
+        private SsimDiff(@Nonnull Path path, @Nonnull double[] ssims) {
             super(path);
             this.ssims = ssims;
         }

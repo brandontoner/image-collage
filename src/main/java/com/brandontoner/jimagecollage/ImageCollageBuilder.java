@@ -197,12 +197,28 @@ public interface ImageCollageBuilder {
      *
      * @return builder with max usages set.
      */
+    @Nonnull
     ImageCollageBuilder withUsagePerImage(int n);
 
     /**
      * @return maximum times each image can be used.
      */
     int getUsagesPerImage();
+
+    /**
+     * Sets the crop function used to get the images into the correct aspect ratio.
+     *
+     * @param cropFunction crop function
+     * @return builder with crop function set
+     */
+    @Nonnull
+    ImageCollageBuilder withCropFunction(@Nonnull CropFunction cropFunction);
+
+    /**
+     * Gets the crop function used to get images into the correct aspect ratio.
+     */
+    @Nonnull
+    CropFunction getCropFunction();
 
     /**
      * Gets the diff function to use to compare images with subsections of the master image.

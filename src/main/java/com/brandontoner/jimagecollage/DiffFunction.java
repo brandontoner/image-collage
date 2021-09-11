@@ -46,15 +46,8 @@ public abstract class DiffFunction<T extends SubImagesDiff<T>> {
         return resizedImg;
     }
 
-    private static boolean checkAspectRatio(@Nonnull BufferedImage bi, int subSectionWidth, int subSectionHeight) {
-        double thisAspectRatio = (double) subSectionWidth / subSectionHeight;
-        double thatAspectRatio = (double) bi.getWidth() / bi.getHeight();
-        double ratio = thatAspectRatio / thisAspectRatio;
-        return 0.99 < ratio && ratio < 1.01;
-    }
-
     @CheckForNull
-    final T diff(@Nonnull MasterImage<T> masterImage, @Nonnull Path subImage) {
+    final T diff(@Nonnull MasterImage<T> masterImage, @Nonnull Path subImage, @Nonnull CropFunction cropFunction) {
         BufferedImage bi = ImageUtils.read(subImage);
         if (bi == null) {
             LOGGER.error("Cannot load {}", subImage);
@@ -62,7 +55,8 @@ public abstract class DiffFunction<T extends SubImagesDiff<T>> {
         }
         int subSectionWidth = masterImage.subSectionWidth();
         int subSectionHeight = masterImage.subSectionHeight();
-        if (!checkAspectRatio(bi, subSectionWidth, subSectionHeight)) {
+        bi = cropFunction.crop(bi, subSectionWidth, subSectionHeight);
+        if (bi == null) {
             LOGGER.warn("File {} has bad aspect ratio", subImage);
             return null;
         }

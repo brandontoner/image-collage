@@ -1,3 +1,4 @@
+import com.brandontoner.jimagecollage.CropFunction;
 import com.brandontoner.jimagecollage.DiffFunction;
 import com.brandontoner.jimagecollage.ImageCollage;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +21,7 @@ public enum Main {
                                            .withOutputDirectory("D:\\output")
                                            .withSubSections(64)
                                            .withUsagePerImage(10)
+                                           .withCropFunction(CropFunction.cropFromMiddle())
                                            .build();
 
         CompletableFuture<Path> future = collage.start();

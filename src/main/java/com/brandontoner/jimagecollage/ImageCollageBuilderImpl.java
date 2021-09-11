@@ -25,6 +25,7 @@ final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements Image
     private Path outputDirectory;
     private DiffFunction<T> diffFunction;
     private int usagesPerImage = 1;
+    private CropFunction cropFunction = CropFunction.rejectBadAspectRatio();
 
     ImageCollageBuilderImpl(@Nonnull DiffFunction<T> diffFunction) {
         this.diffFunction = Objects.requireNonNull(diffFunction);
@@ -38,6 +39,7 @@ final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements Image
     }
 
     @Override
+    @CheckForNull
     public Path getTargetImage() {
         return targetImage;
     }
@@ -121,6 +123,19 @@ final class ImageCollageBuilderImpl<T extends SubImagesDiff<T>> implements Image
     @Override
     public int getUsagesPerImage() {
         return usagesPerImage;
+    }
+
+    @Nonnull
+    @Override
+    public ImageCollageBuilder withCropFunction(@Nonnull CropFunction cropFunction) {
+        this.cropFunction = Objects.requireNonNull(cropFunction);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public CropFunction getCropFunction() {
+        return cropFunction;
     }
 
     @Nonnull

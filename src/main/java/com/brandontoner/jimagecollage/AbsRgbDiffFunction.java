@@ -42,9 +42,9 @@ class AbsRgbDiffFunction extends DiffFunction<AbsRgbDiffFunction.LongDiff> {
     }
 
     static final class LongDiff extends SubImagesDiff<LongDiff> {
-        private final long[] diffs;
+        @Nonnull private final long[] diffs;
 
-        LongDiff(Path path, long[] diffs) {
+        private LongDiff(@Nonnull Path path, @Nonnull long[] diffs) {
             super(path);
             this.diffs = diffs;
         }

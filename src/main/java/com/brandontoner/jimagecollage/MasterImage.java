@@ -11,7 +11,8 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -24,9 +25,15 @@ final class MasterImage<T extends SubImagesDiff<T>> {
     private final int subSectionWidth;
     private final int subSectionHeight;
     private final int usagesPerImage;
+    private final CropFunction cropFunction;
 
-    MasterImage(@Nonnull Path target, int subSectionsX, int subSectionsY, int usagesPerImage) {
+    MasterImage(@Nonnull Path target,
+                int subSectionsX,
+                int subSectionsY,
+                int usagesPerImage,
+                CropFunction cropFunction) {
         this.usagesPerImage = usagesPerImage;
+        this.cropFunction = cropFunction;
         Image image = new Image(Objects.requireNonNull(ImageUtils.read(target)));
         this.subSectionsX = subSectionsX;
         this.subSectionsY = subSectionsY;
@@ -46,8 +53,7 @@ final class MasterImage<T extends SubImagesDiff<T>> {
         }
     }
 
-    boolean add(@Nonnull T entry) {
-        boolean added = false;
+    void add(@Nonnull T entry) {
         int usages;
         while ((usages = entry.getUsages()) < usagesPerImage) {
             int bestIndex = -1;
@@ -67,7 +73,7 @@ final class MasterImage<T extends SubImagesDiff<T>> {
             }
 
             if (bestIndex == -1) {
-                return added;
+                return;
             }
             entry.incrementUsages();
             T oldFile = bestImages[bestIndex];
@@ -77,15 +83,13 @@ final class MasterImage<T extends SubImagesDiff<T>> {
                 oldFile.decrementUsages();
                 add(oldFile);
             }
-            added = true;
         }
-        return added;
     }
 
     @Nonnull
     BufferedImage compile() {
         LOGGER.info("Compiling images into collage");
-        BufferedImage bi = ImageUtils.read(bestImages[0].path());
+        BufferedImage bi = cropFunction.crop(ImageUtils.read(bestImages[0].path()), subSectionWidth, subSectionHeight);
         int scale = getScale(bi.getWidth(), bi.getHeight());
         int width = bi.getWidth() / scale;
         int height = bi.getHeight() / scale;
@@ -95,26 +99,30 @@ final class MasterImage<T extends SubImagesDiff<T>> {
         g2.setBackground(Color.WHITE);
         g2.clearRect(0, 0, output.getWidth(), output.getHeight());
 
-        Collection<Map.Entry<Point, T>> diffs = new ArrayList<>(bestImages.length);
+
+        Map<Path, List<Point>> imageToUsages = new HashMap<>();
 
         for (int y = 0; y < subSectionsY; ++y) {
             for (int x = 0; x < subSectionsX; ++x) {
-                if (bestImages[y * subSectionsX + x] != null) {
-                    diffs.add(new AbstractMap.SimpleImmutableEntry<>(new Point(x, y),
-                                                                     bestImages[y * subSectionsX + x]));
+                T image = bestImages[y * subSectionsX + x];
+                if (image != null) {
+                    imageToUsages.computeIfAbsent(image.path(), ignored -> new ArrayList<>()).add(new Point(x, y));
                 }
             }
         }
-        diffs.parallelStream()
-             .map(e -> new AbstractMap.SimpleImmutableEntry<>(e.getKey(), ImageUtils.read(e.getValue().path())))
-             .forEach(e -> {
-                 int x = e.getKey().x;
-                 int y = e.getKey().y;
-                 synchronized (g2) {
-                     g2.drawImage(e.getValue(), x * width, y * height, width, height, null);
-                 }
-             });
-        g2.dispose();
+        imageToUsages.entrySet()
+                     .parallelStream()
+                     .map(e -> new AbstractMap.SimpleImmutableEntry<>(cropFunction.crop(ImageUtils.read(e.getKey()),
+                                                                                        subSectionWidth,
+                                                                                        subSectionHeight),
+                                                                      e.getValue()))
+                     .forEach(e -> {
+                         synchronized (g2) {
+                             for (Point point : e.getValue()) {
+                                 g2.drawImage(e.getKey(), point.x * width, point.y * height, width, height, null);
+                             }
+                         }
+                     });
         return output;
     }
 
